@@ -8,7 +8,7 @@ Category list in clause_type needs to match the one in prompts.py
 
 
 class FlaggedClause(BaseModel):
-    clause_type: str = Field(..., description="The category of this clause. Choose one of: Foreign Jurisdiction, Choice of Foreign Law, Limitation of Liability, Unilateral Termination, Unilateral Modification, Forced Arbitration, Data Sharing with Third Parties Parties, Silent Policy Changes. Use a short, clear label of your own only if none of these fit.")
+    clause_type: str = Field(..., description="The category of this clause. Choose one of: Foreign Jurisdiction, Choice of Foreign Law, Limitation of Liability, Unilateral Termination, Unilateral Modification, Forced Arbitration, Data Sharing with Third Parties, Silent Policy Changes. Use a short, clear label of your own only if none of these fit.")
 
     excerpt: str = Field(..., description="A short verbatim quote of 1 to 3 sentences copied exactly from the document that contains this clause. Never paraphrase or invent text.")
 
