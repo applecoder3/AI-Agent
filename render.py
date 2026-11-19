@@ -96,30 +96,6 @@ def save_report(analysis: PolicyAnalysis, output_path: str | Path) -> Path:
     return file_path
 
 
-#Tester
-if __name__ == "__main__":
-    from schemas import PolicyAnalysis
-
-    mock_clean_analysis = PolicyAnalysis(
-        document_type="Privacy Policy",
-        company_name="OpenNotebook App",
-        overall_summary=(
-            "OpenNotebook's privacy policy outlines straightforward data practices for a local-first note-taking application. "
-            "The document explicitly states that all user notes are encrypted locally on the device, telemetry data is "
-            "completely anonymized, and no personal information is ever sold or shared with third-party advertisers."
-        ),
-        risk_level="low",
-        key_takeaways=[
-            "All personal notes are encrypted locally on your device.",
-            "Analytics tracking is minimal, anonymized, and opt-out by default.",
-            "No personal data or document content is sold or shared with third parties."
-        ],
-        flagged_clauses=[],  # Tests how render.py handles an empty list of clauses
-        data_collected=[
-            "Anonymized crash reports",
-            "App version and operating system type"
-        ]
-    )
 
     output_file_clean = save_report(mock_clean_analysis, "reports/test_clean_report.md")
     print(f"Second test render successful! Clean report saved to: {output_file_clean.resolve()}")

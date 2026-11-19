@@ -1,7 +1,7 @@
 # Privacy Policy: OpenNotebook App
 
 **Overall Risk Level:**  LOW RISK  
-**Generated:** 2026-11-17 17:56
+**Generated:** 2026-11-19 18:24
 
 ---
 
