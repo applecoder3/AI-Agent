@@ -5,16 +5,16 @@ from schemas import PolicyAnalysis
 
 #Level of severity badges for flagged clauses
 SEVERITY_BADGES = {
-    "high": " High",
-    "medium": " Medium",
-    "low": " Low",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
 }
 
 #Overall risk level badges for the report header
 RISK_BADGES = {
-    "high": " HIGH RISK",
-    "medium": " MEDIUM RISK",
-    "low": " LOW RISK",
+    "high": "HIGH RISK",
+    "medium": "MEDIUM RISK",
+    "low": "LOW RISK",
 }
 
 #Function to format the PolicyAnalysis object into a Markdown report
@@ -66,7 +66,8 @@ def format_markdown_report(analysis: PolicyAnalysis) -> str:
                 clause.why_flagged.strip(),
                 "",
                 "**Verbatim Excerpt:**",
-                f"> \"{clause.excerpt.strip()}\"",
+                quoted_excerpt = clause.excerpt.strip().replace("\n", "\n> ")
+                f'> "{quoted_excerpt}"'
                 "",
             ])
     else:
@@ -90,12 +91,4 @@ def format_markdown_report(analysis: PolicyAnalysis) -> str:
 def save_report(analysis: PolicyAnalysis, output_path: str | Path) -> Path:
     """Formats the PolicyAnalysis object and writes it to a .md file."""
     markdown_text = format_markdown_report(analysis)
-    file_path = Path(output_path)
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-    file_path.write_text(markdown_text, encoding="utf-8")
-    return file_path
-
-
-
-    output_file_clean = save_report(mock_clean_analysis, "reports/test_clean_report.md")
-    print(f"Second test render successful! Clean report saved to: {output_file_clean.resolve()}")
+   
