@@ -1,8 +1,14 @@
 import typer 
 from pathlib import Path
+from rich.console import Console
+
+from pdf import extract_text_from_pdf
+from agent import analyze_document
+from render import format_markdown_report, save_report
 
 #command-line for application
 app = typer.Typer()
+console = Console()
 
 #runs the function when the CLI starts
 @app.callback(invoke_without_command=True)
@@ -14,55 +20,58 @@ def main():
     print("This tool helps you understand polices before agreeing to them.\n")
 
 @app.command()
-def analyze(file: str = typer.Option(..., help="Path to the PDF policy")):
+def analyze(
+    file: str = typer.Option(None, help ="Path to a PDF Policy"),
+    text: str = typer.Option(None, help ="Paste Policy text"),
+    output: str = typer.Option("report.md", help = "Name of the output report"),
+):
+    """Analyze a PDF or pasted policy text. """
 
-    # check if the PDf file exists
-    pdf_path = Path(file)
-
-    if not pdf_path.exists():
-        print("Error: The PDF file could not be found.")
+    # check that user provided one input only 
+    if bool(file) == bole(text):
+        console.print("[red]Please provide either --file or --text, not both[/red]")
         raise typer.Exit(code=1)
-
-# checks if the file is a PDF
-    if pdf_path.suffix.lower() != ".pdf":
-        print("Error: Please provide a PDF file.")
-        raise typer.Exit(code=1)
-
-
+    
     try:
+        # get text from the pdf or user input
+        if file:
+            pdf_path = Path(file)
 
-        # getting the text from the pdf
-        from pdf import extract_text
+            if not pdf_path.exists():
+                console.print("[red]Error: PDF file not found.[/red]")
+                raise typer.Exit(code=1)
 
-        console.print("Reading PDF...")
-        document_text = extract_text(pdf_path)
+            if pdf_path.suffix.lower() != ".pdf":
+                console.print("[red]Error: Please provide PDF file.[/red]")
+                raise typer.Exit(code =1)
 
-        # analyzing text using claude 
-        from agent import analyze_document
+            console.print("[green] Reading PDF...[/green]")
+            document_text = extract_text_from_pdf(str(pdf_path))
 
-        console.print("ANalyzing policy with AI...")
+        else:
+            document_text = text.strip()
+
+            if not document_text:
+                console.print("[red] Error: Policy text cannot be empty.[/red]")
+                raise typer.Exit(code =1)
+
+        console.print("[yellow]Analyzing policy with AI...")
         analysis = analyze_document(document_text)
 
-        # creating and saving the report
-        from redner import render_report, save_report
+        report = format-markdown_report(analysis)
 
-        console.print("Creating report...")
-        report = render_report(analysis)
-        save_report(report, output)
-
-        # display report 
-        console.print("\n[bold green]Analysis complete! [/bold green]")
+        console.print("\n[bold green]Analysis complete![/bold green]")
         console.print(report)
-        console.print(f"\nReport saved as: {output}")
+
+        svaed_file = save_report(analysis, output)
+        console.print(f"\n[bold green]Report saved to: {saved_file}[/bold green]")
+
+    except typer.Exit:
+        raise
 
     except Exception as error:
-        console.print(f"\n[red]An error occured: {error}[/red]")
-        raise typer.Exit(code=1)
-
-        print(f"PDF found: {pdf_path.name}")
-        print("Ready to analyze the policy!")
-
-
+        console.print(f"\n[red]An error occurred: {error}[/red]")
+        raise typer.Exit(code = 1)
 
 if __name__ == "__main__":
-    app()
+    app()    

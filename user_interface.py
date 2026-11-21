@@ -1,4 +1,7 @@
 import streamlit as st
+from pdf import extract_text_from_pdf
+from agent import analyze_document
+from render import format_markdown_report
 
 # set up the webpage
 st.set_page_config(
@@ -100,24 +103,6 @@ policy_text = st.text_area(
     label_visibility="collapsed"
 )
 
-
-# analyze button
-st.divider()
-
-if st.button("Analyze Policy", type="primary", use_container_width=True):
-
-    if uploaded_file is None and not policy_text.strip():
-        st.error("Please upload a PDF or paste policy text.")
-
-    else:
-        st.success("Your document has been received!")
-
-        st.info(
-            "Your document is ready. The AI analysis "
-            "connection will be added when the backend is ready."
-        )
-
-
 # results display function
 def display_results(analysis, report):
 
@@ -188,15 +173,44 @@ def display_results(analysis, report):
         st.write("No data collection information was identified.")
 
     # download the report
-    st.subheader("Download Yoru Report")
+    st.subheader("Download Your Report")
 
     st.download_button(
-        label = "Download Analyss Report",
+        label = "Download Analysis Report",
         data = report,
         file_name = "policy_analysis.md",
         mime = "text/markdown"
     )
 
+
+# analyze policy
+if st.button("Analyze Policy", type="primary", use_container_width=True):
+
+    if uploaded_file is None and not policy_text.strip():
+        st.error("Please upload a PDF or paste policy text.")
+
+    else:
+        try:
+            with st.spinner("Analyzing your policy..."):
+
+                # Get text from PDF or text box
+                if uploaded_file is not None:
+                    document_text = extract_text_from_pdf(uploaded_file)
+                else:
+                    document_text = policy_text.strip()
+
+                # Analyze the document
+                analysis = analyze_document(document_text)
+
+                # Create Markdown report
+                report = format_markdown_report(analysis)
+
+            st.success("Analysis completed successfully!")
+
+            display_results(analysis, report)
+
+        except Exception as error:
+            st.error(f"An error occurred: {error}")
 
 # footer
 st.markdown("""
