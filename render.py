@@ -3,6 +3,7 @@ from pathlib import Path
 from schemas import PolicyAnalysis
 
 
+
 #Level of severity badges for flagged clauses
 SEVERITY_BADGES = {
     "high": "High",
