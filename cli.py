@@ -4,9 +4,11 @@ from rich.console import Console
 from agent import analyze_document
 from pdf import extract_text_from_pdf
 from render import format_markdown_report, save_report
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
 
 import typer
 import traceback
+
 
 # Initialize the rich console
 console = Console()
@@ -40,25 +42,36 @@ def analyze(
     
     # Extract text from the PDF file
     try:
-        console.print(f"[green]Analyzing PDF file: {pdf_path.name}[/green]...")
-        document_text = extract_text_from_pdf(str(pdf_path))
 
-        # Using claude to analyze the extracted text
-        console.print("[green]Analyzing document text with Claude...[/green]")
-        analysis_report = analyze_document(document_text)
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TimeElapsedColumn(),
+            console=console,
+        ) as progress:
+            # Stage 1: Extracting text from PDF file 
+            pdf_task = progress.add_task(f"[green]Extracting text from PDF file: {pdf_path.name}....", total=1)
+            document_text = extract_text_from_pdf(str(pdf_path))
+            progress.update(pdf_task, completed=1)
 
-        # Rendering the analysis report to the console and saving the Markdown file
-        console.print("Creating report...")
-        report = format_markdown_report(analysis_report)
-        saved_path = save_report(analysis_report, output)
-        
-        # Display report
+            # Stage 2: Analyzing document text with Claude
+            analysis_task = progress.add_task(f"[orange1]Analyzing document text with Claude...", total=None)
+            analysis_report = analyze_document(document_text)
+            progress.update(analysis_task, total=1, completed=1)
+
+            # Stage 3: Formatting and saving the Markdown report
+            report_task = progress.add_task(f"[pink1]Creating and saving Markdown report...", total=1)
+            report = format_markdown_report(analysis_report)
+            saved_path = save_report(analysis_report, output)
+            progress.update(report_task, completed=1)
+
+        # Display report after progress bar finishes
         console.print("\n[bold green]Analysis complete![/bold green]\n")
         console.print(report)
         console.print(f"[green]Report saved to:[/green] {saved_path.resolve()}")
 
     except Exception as e:
-        traceback.print_exc()
         console.print(f"[red]Error Occurred: {e}[/red]")
         raise typer.Exit(code=1)
 
