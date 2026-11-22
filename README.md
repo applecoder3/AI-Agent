@@ -1,120 +1,118 @@
-AI Agent: Terms of Service & Privacy Policy Analyzer
+# Terms of Service & Privacy Policy Analyzer
 
-An AI agent that reads a company's Terms of Service or privacy policy and returns a short, plain-language report: what the document says overall, plus a list of flagged clauses (data privacy concerns, forced arbitration, liability waivers, unilateral changes, etc.) that people commonly overlook.
+A command-line AI agent that reads a Terms of Service or privacy policy (PDF) and produces a plain-language Markdown report: an overall summary, a risk level, key takeaways, flagged clauses with verbatim quotes, and the personal data the document says it collects.
 
-This tool helps people understand agreements. It does not replace legal advice.
+This tool helps people understand agreements. It is not legal advice, and its output should be verified.
 
-# Goal for the next 1.5 weeks
+## What You Need
 
-## Must have
+- Python 3.10 or newer
+- An Anthropic API key ([how to get one](https://platform.claude.com/docs/en/get-api-key); usage is billed by Anthropic)
+- An internet connection
+- A policy as a **text-based PDF** (not a scan)
 
-1.  A working agent: Give policiy (PDF or pasted text) and it returns a report containing a summary and flagged clauses
+## Setup
 
-2.  One user interface: Terminal CLI
+1. Clone the repository and open a terminal in the project folder.
 
----
+2. Create and activate a virtual environment.
 
-# How the project connetcs
+   Windows (PowerShell):
 
-**Input -> pdf.py -> agent.py -> render.py -> cli.py/user_interface.py**
+   ```powershell
+   python -m venv venv
+   venv\Scripts\activate
+   ```
 
-Each file does one job and hands the results to the next, Allowing us to build in parallel without wiating on one another
+   macOS / Linux:
 
-# File map
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
 
-1. schemas.py
-   - Objective: Defines the shape of the agent's results, so every other file agrees on what a report is
-   - Requirements: Contains result structure (Doc type, summary, list of flagged clauses, verbatim excerpt, plain language explanation, and a severity of low/medium/high). The whole team reviews it.
-   - Depends on: Nothing, This is first priority
+3. Install dependencies:
 
-2. prompts.py
-   - Objective: Agent's instructions, list of clause categories it should look for, including data privacy concerns
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-   - Requirements: Prompt text exist, names every category, tells the agent to quiate the source and never invent clauses, ask for plain langauge, tested on two/three policies and refined
+4. Create a file named `.env` in the project folder containing your key:
+   ```
+   ANTHROPIC_API_KEY=your-key-here
+   ```
+   Never commit `.env` add `.env` to `.gitignore`.
 
-   - Depends on: schemas.py
+## Run
 
-3. pdf.py
-   - Objective: Turns whatever the user supplies into one clean string
+```bash
+python cli.py analyze --file sample_TOS.pdf --output report.md
+```
 
-   - Requirements: Returns text for a normal PDF, raises a clear error for an empty pdf or non string pdf
+| Option     | Short | Description                       | Default     |
+| ---------- | ----- | --------------------------------- | ----------- |
+| `--file`   | `-f`  | Path to the policy PDF (required) | none        |
+| `--output` | `-o`  | Where to save the Markdown report | `report.md` |
 
-   - Depends on: Nothing
+The report prints in the terminal and is saved to the `--output` path. `sample_report.md` shows an example of the output.
 
-4. agent.py
-   - Objective: sends the document text plus the system prompt to Anthropic api and returns results that match valid schemas
+## How It Works
 
-   - Requirements: Given text and returns valid object with summary and flagged clauses. Handles api errors without crashing
+```
+cli.py -> pdf.py -> prompts.py + agent.py -> schemas.py -> render.py
+```
 
-   - Depends on: schemas.py and prompts.py
+| File                | Role                                                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `cli.py`            | Terminal entry point (Typer + Rich); validates the input file                                                          |
+| `pdf.py`            | Extracts text from every PDF page with pypdf                                                                           |
+| `prompts.py`        | System and user prompts, including the 8 clause categories and the JSON schema                                         |
+| `agent.py`          | Sends the text to Claude (`claude-opus-5-5`), validates the JSON reply, and retries up to 3 times on validation errors |
+| `schemas.py`        | Pydantic models (`PolicyAnalysis`, `FlaggedClause`) defining the report structure                                      |
+| `render.py`         | Turns the validated result into a Markdown report and saves it                                                         |
+| `user_interface.py` | Streamlit web UI, **not functional yet**                                                                               |
 
-5. render.py
-   - Objective: Converts a result object into a readable markdown report and saves it to a file
+**Clause categories:** Foreign Jurisdiction, Choice of Foreign Law, Limitation of Liability, Unilateral Termination, Unilateral Modification, Forced Arbitration, Data Sharing with Third Parties, Silent Policy Changes. If you change this list, update it in both `prompts.py` and the `clause_type` description in `schemas.py`.
 
-   - Requirements: Produces clean report for a result with flagged clauses. Works without the need for an api key and can be tested with custom data
+## Known Limitations
 
-   - Depends on: schemas.py
+- **Scanned or image-only PDFs fail.** There is no OCR, so no text is found.
+- **Local PDFs only.** URLs, `.docx`, and `.txt` files are not supported.
+- **Long documents are not chunked.** If the response hits the 8,192-token limit, the run stops with an error.
+- **Excerpts are not verified in code.** The model is told to quote verbatim, but nothing checks that each quote exists in the document.
+- **Results can vary between runs**, including clause counts and medium vs. high ratings.
+- **Privacy:** the full document text is sent to Anthropic's API. Avoid confidential documents.
+- **Prompt injection:** document text goes directly into the prompt, so a malicious document could influence the output.
+- **No jurisdiction-specific analysis** (GDPR, CCPA, etc.), no linked-policy following, and no version comparison.
 
-6. cli.py
-   - Objective: Terminal interface and the projgram's entry point
+## Troubleshooting
 
-   - Requirements: A command like python cli.py analyze --file policy.pdf prints the report in the terminal and saves the report file
+| Error                                  | Likely cause                                          |
+| -------------------------------------- | ----------------------------------------------------- |
+| `No text found in the PDF file`        | The PDF is scanned or image-only                      |
+| Authentication error                   | `ANTHROPIC_API_KEY` is missing or wrong in `.env`     |
+| `response was truncated`               | The document is too long for the current `max_tokens` |
+| `File is not a PDF` / `file not found` | Check the `--file` path and extension                 |
 
-   - Depends on: pdf.py, agent.py, and render.py
+## Roadmap
 
-7. user_interface.py
-   - Objective: Optional Streamlit web interface. File upload, paste box, result display, download button
+Finish the Streamlit UI, verify excerpts programmatically, support URLs and other file types, add OCR, offer a local-LLM option, and add jurisdiction-aware analysis and policy version comparison.
 
-   - Requirements: Upload or paste, click analyze, see the summary and flagged clauses, download the report
+## References
 
-   - Depends on: pdf.py, agent.py, render.py
+**Anthropic API**
 
-**The interface files only call other files. No logic should be implemented in them**
+- [Get your API key](https://platform.claude.com/docs/en/get-api-key): create a key in the Claude Console (Settings, then API keys)
+- [Quickstart](https://platform.claude.com/docs/en/get-started): make your first API request
+- [Claude API intro](https://platform.claude.com/docs/en/intro)
+- [Structured outputs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)
+- [Client SDKs overview](https://platform.claude.com/docs/en/cli-sdks-libraries/overview)
 
-# Contracts between files (so we can work in parallel)
+**Tools and libraries**
 
-- pdf.py exposes one function: path or text in, one text string out.
-
-- agent.py exposes one function: text string in, result object (from schemas.py) out.
-
-- render.py exposes two functions: result object in, Markdown string out; and a way to save that string to a file.
-
-# Work flow
-
-1. Agent and integration: agent.py
-2. Data contract and report: schemas.py, render.py
-3. Input and prompt quality: pdf.py, prompts.py, samples folder
-4. intefaces: cli.py and then user_interface.py last
-
-# Work flow cont.
-
-- Work on your own branch and open a pull request. Another teammate reviews before merging.
-- Don't edit a file someone else owns without telling them.
-- Keep functions small and documented, so a teammate can pick up your file without a call.
-
-# Setup
-
-1. create and activate a virtual environment, then run `pip install -r requirements.txt`
-
-2. Never commit .env file
-
-# Help resources
-
-### Look for more if help/documentation needed
-
-- Claude structured outputs (how the agent returns data in a guaranteed shape): https://platform.claude.com/docs/en/build-with-claude/structured-outputs
-- Claude API intro: https://platform.claude.com/docs/en/intro
-- pypdf (PDF text extraction): https://pypdf.readthedocs.io/en/stable/
-- Typer (building the CLI): https://typer.tiangolo.com/tutorial/
-- Rich (terminal formatting): https://rich.readthedocs.io/en/stable/introduction.html
-- Streamlit (web UI): https://docs.streamlit.io/get-started
-
-# Known limitaitons
-
-- Scanned or image-only PDFs won't work
-  Very long documents may be truncated
-  Output is AI-generated and should be treated as a guide, not legal analysis. Must be verified
-
-# Status
-
-- Development phase
+- [pypdf](https://pypdf.readthedocs.io/en/stable/): PDF text extraction
+- [Pydantic](https://docs.pydantic.dev/latest/): schema validation
+- [Typer](https://typer.tiangolo.com/tutorial/): command-line interface
+- [Rich](https://rich.readthedocs.io/en/stable/introduction.html): terminal formatting
+- [python-dotenv](https://pypi.org/project/python-dotenv/): loading `.env` files
+- [Streamlit](https://docs.streamlit.io/get-started): planned web UI
