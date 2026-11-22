@@ -14,7 +14,17 @@ class FlaggedClause(BaseModel):
 
     why_flagged: str = Field(..., description="A plain-language explanation, written for someone with no legal training, of what this clause means in practice for the user and why it is easy to overlook. 1 to 3 sentences.")
 
-    severity: Literal["low", "medium", "high"] = Field(..., description="How much this clause could affect an average consumer. Use \"high\" if it waives legal rights or allows broad use of sharing of personal data, \"medium\" if it limits the user's options or lets the company change terms, and \"low\" if it is unusual but has limited practical impact")
+    severity: Literal["low", "medium", "high"] = Field(..., 
+        description=(
+            'How much this clause could affect an average consumer compared to industry norms. '
+            'Use "high" ONLY for severe or predatory terms (e.g., selling personal data to brokers, '
+            'perpetual AI-training licenses on private user content, or mandatory arbitration with NO opt-out). '
+            'Use "medium" for common but restrictive boilerplate (e.g., standard liability caps, '
+            'arbitration with an opt-out or small-claims exception, unilateral termination/modification, '
+            'or foreign jurisdiction). '
+            'Use "low" for minor or unusual terms with limited practical impact.'
+            ),
+    )
 
 class PolicyAnalysis(BaseModel):
     document_type: str = Field(..., description="The kind of document, such as \"Terms of Service\", \"Privacy Policy\", or \"End User License Agreement\". If it is none of these, say what it actually is.")
@@ -23,7 +33,17 @@ class PolicyAnalysis(BaseModel):
 
     overall_summary: str = Field(..., description="A plain-language summary of what the document covers, about 150 to 250 words, written at an average adult reading level with little to no legal jargon.")
 
-    risk_level: Literal["low", "medium", "high"] = Field(..., description="The overall risk to an average consumer. Use \"high\" if the document contains several high-severity clauses, \"medium\" if it contains mostly medium-severity ones, and \"low\" if it is largely standard and consumer-friendly.")
+    risk_level: Literal["low", "medium", "high"] = Field(..., 
+        description=(
+            'The overall risk to an average consumer, weighing BOTH flagged clauses and mitigating '
+            'protections (such as minimal data collection, opt-out rights, or preserved statutory rights). '
+            'Use "high" only if the document has multiple severe "high" clauses (such as broad data '
+            'monetization/selling alongside major rights waivers) with few consumer protections. '
+            'Use "medium" if it contains standard restrictive tech boilerplate (like liability caps '
+            'or opt-out arbitration) without aggressive data exploitation. '
+            'Use "low" if it is largely consumer-friendly with minimal data collection and no major rights waivers.'
+            ),
+    )
 
     key_takeaways: list[str] = Field(..., description="The 3 to 5 most important things a user should know before agreeing, each as one short plain-language sentence.")
 

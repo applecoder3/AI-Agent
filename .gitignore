@@ -222,3 +222,6 @@ __marimo__/
 #virtual environment
 myenv/
 
+#test folders
+reports/
+ToS/

@@ -89,10 +89,10 @@ def format_markdown_report(analysis: PolicyAnalysis) -> str:
     return "\n".join(lines)
 
 #Saves the formatted Markdown report to a specified file path
-def save_report(analysis: PolicyAnalysis, output_path: str | Path) -> Path:
-    """Formats the PolicyAnalysis object and writes it to a .md file."""
+def save_report(analysis: PolicyAnalysis, output_path: str | Path, reports_dir: str | Path = "reports") -> Path:
+    """Formats the PolicyAnalysis object and writes it to a .md file inside reports/."""
     markdown_text = format_markdown_report(analysis)
-    file_path = Path(output_path)
+    file_path = Path(reports_dir) / Path(output_path).name
     file_path.parent.mkdir(parents=True, exist_ok=True)
     file_path.write_text(markdown_text, encoding="utf-8")
     return file_path
