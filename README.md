@@ -38,15 +38,19 @@ This tool helps people understand agreements. It is not legal advice, and its ou
    ```
 
 4. Create a file named `.env` in the project folder containing your key:
+
    ```
    ANTHROPIC_API_KEY=your-key-here
    ```
+
    Never commit `.env` add `.env` to `.gitignore`.
+
+5. download a PDF file
 
 ## Run
 
 ```bash
-python cli.py analyze --file sample_TOS.pdf --output report.md
+python cli.py analyze --file name_of_file.pdf --output report.md
 ```
 
 | Option     | Short | Description                       | Default     |
