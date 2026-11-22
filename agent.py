@@ -31,7 +31,7 @@ def analyze_document(document_text: str, max_retries: int = 3) -> PolicyAnalysis
 
             response = client.messages.create(
                 model="claude-opus-5-5",
-                max_tokens=8192,
+                max_tokens=16384,
                 messages=messages,
                 system=SYSTEM_PROMPT,
             )
