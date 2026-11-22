@@ -24,7 +24,7 @@ def main():
 @app.command()
 def analyze(
     file: str = typer.Option(..., "--file", "-f", help="Path to the PDF policy"),
-    output: str = typer.Option("report.md", "--output", "-o", help="Path to save the Markdown report")
+    output: str | None = typer.Option(None, "--output", "-o", help="Path to save the Markdown report")
 ):
     """ Analyze a PDF policy and generate a Markdown report."""
 
@@ -63,13 +63,25 @@ def analyze(
             # Stage 3: Formatting and saving the Markdown report
             report_task = progress.add_task(f"[pink1]Creating and saving Markdown report...", total=1)
             report = format_markdown_report(analysis_report)
-            saved_path = save_report(analysis_report, output)
+            saved_path = save_report(analysis_report, output) if output else None
             progress.update(report_task, completed=1)
 
         # Display report after progress bar finishes
         console.print("\n[bold green]Analysis complete![/bold green]\n")
         console.print(report)
-        console.print(f"[green]Report saved to:[/green] {saved_path.resolve()}")
+
+        if saved_path:
+            console.print(f"[bold green]Report saved to:[/bold green] {saved_path.resolve()}")
+        else:
+            console.print("")
+            save_option = typer.confirm("Do you want to save the report as a Markdown file?")
+            if save_option:
+                default_path = f"{pdf_path.stem}_report.md"
+                chosen_path = typer.prompt("Enter the path to save the report", default=default_path)
+                saved_path = save_report(analysis_report, chosen_path)
+                console.print(f"[bold green]Report saved to:[/bold green] {saved_path.resolve()}")
+            else:
+                console.print("[yellow]Report not saved. Done![/yellow]")
 
     except Exception as e:
         console.print(f"[red]Error Occurred: {e}[/red]")
